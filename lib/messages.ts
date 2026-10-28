@@ -155,6 +155,7 @@ const et = {
   hubIntro:
     'Harjuta JWT testi küsimusi kohese tagasisidega või tee proovieksam, kus tulemus selgub lõpus. Progress salvestub sinu brauserisse.',
   unfinishedPractice: (label: string) => `Pooleli harjutus: ${label}`,
+  unfinishedExam: 'Pooleli eksam',
   questionOf: (i: number, n: number) => `Küsimus ${i} / ${n}`,
   resume: 'Jätka',
   discard: 'Loobu',
@@ -302,6 +303,7 @@ const en: Messages = {
   hubIntro:
     'Practise the JWT test questions with instant feedback, or take a mock exam where you see the result at the end. Progress is saved in your browser.',
   unfinishedPractice: (label) => `Unfinished practice: ${label}`,
+  unfinishedExam: 'Unfinished exam',
   questionOf: (i, n) => `Question ${i} / ${n}`,
   resume: 'Resume',
   discard: 'Discard',
@@ -450,6 +452,7 @@ const ru: Messages = {
   hubIntro:
     'Тренируйтесь на вопросах теста по JWT с мгновенной обратной связью или пройдите пробный экзамен, результат которого будет виден в конце. Прогресс сохраняется в вашем браузере.',
   unfinishedPractice: (label) => `Незавершённая практика: ${label}`,
+  unfinishedExam: 'Незавершённый экзамен',
   questionOf: (i, n) => `Вопрос ${i} / ${n}`,
   resume: 'Продолжить',
   discard: 'Отменить',

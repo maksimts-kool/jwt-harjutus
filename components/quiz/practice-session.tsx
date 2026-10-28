@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { grade, type GradeResult, isEmptyResponse } from '@/lib/grading';
 import type { Messages } from '@/lib/messages';
-import { type PracticeLabel, recordAnswer, savePractice } from '@/lib/progress';
+import { type PracticeLabel, type PracticeSessionState, recordAnswer, updateSession } from '@/lib/progress';
 import type { Bank, Question } from '@/lib/questions';
 import { toSurveyElements } from '@/lib/survey';
 import { useBank, useMessages } from '@/lib/use-messages';
@@ -91,56 +91,56 @@ function QuestionStep({
 }
 
 export function PracticeSession({
-  label,
-  ids,
-  startIndex = 0,
+  session,
+  index,
+  onNavigate,
   onExit,
   onRetry,
 }: {
-  label: PracticeLabel;
-  ids: string[];
-  startIndex?: number;
+  session: PracticeSessionState;
+  /** URL-ist: 0-põhine küsimus, `ids.length` = kokkuvõte */
+  index: number;
+  onNavigate: (index: number) => void;
   onExit: () => void;
   onRetry: (ids: string[]) => void;
 }) {
   const m = useMessages();
   const bank = useBank();
+  const { id, label, ids, results } = session;
   const title = formatPracticeLabel(label, bank, m);
-  const [index, setIndex] = useState(startIndex);
   const [attempt, setAttempt] = useState(0);
-  const [checked, setChecked] = useState<Checked | null>(null);
-  const [results, setResults] = useState<Record<string, boolean>>({});
+  // Kontrollitud vastus kehtib ainult sellel küsimusel, kus see anti (URL võib vahepeal muutuda).
+  const [checkedAt, setChecked] = useState<(Checked & { index: number }) | null>(null);
+  const checked = checkedAt?.index === index ? checkedAt : null;
   const finished = index >= ids.length;
   const q = finished ? undefined : bank.getQuestion(ids[index]);
 
   useEffect(() => {
-    // Ühe küsimuse harjutust (otselink vastuste lehelt) pole mõtet „pooleli” jätta.
-    savePractice(finished || ids.length === 1 ? undefined : { label, ids, index });
-  }, [finished, label, ids, index]);
+    updateSession<PracticeSessionState>(id, (s) => (s.index === index ? s : { ...s, index }));
+  }, [id, index]);
+
+  function saveResult(qid: string, ok: boolean) {
+    recordAnswer(qid, ok);
+    updateSession<PracticeSessionState>(id, (s) => ({ ...s, results: { ...s.results, [qid]: ok } }));
+  }
 
   function handleCheck(response: unknown) {
     if (!q) return;
     const result = grade(q, response);
-    setChecked({ response, result });
-    if (q.type !== 'essay') {
-      const ok = result.status === 'correct';
-      recordAnswer(q.id, ok);
-      setResults((r) => ({ ...r, [q.id]: ok }));
-    }
+    setChecked({ response, result, index });
+    if (q.type !== 'essay') saveResult(q.id, result.status === 'correct');
   }
 
   function handleSelfGrade(ok: boolean) {
     if (!q || !checked) return;
-    recordAnswer(q.id, ok);
-    setResults((r) => ({ ...r, [q.id]: ok }));
+    saveResult(q.id, ok);
     setChecked({ ...checked, selfGrade: ok });
   }
 
   function next() {
     setChecked(null);
     setAttempt(0);
-    setIndex((i) => i + 1);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    onNavigate(index + 1);
   }
 
   function retry() {

@@ -10,8 +10,8 @@ import {
   Timer,
   Trash2,
 } from 'lucide-react';
-import { useSearchParams } from 'next/navigation';
-import { useCallback, useState } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ExamResults, gradedScore } from '@/components/quiz/exam-results';
 import { type ExamOutcome, ExamSession } from '@/components/quiz/exam-session';
 import { formatPracticeLabel, PracticeSession } from '@/components/quiz/practice-session';
@@ -19,23 +19,49 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { withLang } from '@/lib/i18n';
 import {
+  deleteSession,
+  type ExamSessionState,
+  newSessionId,
   type PracticeLabel,
   recordAnswer,
   recordExam,
   resetProgress,
-  savePractice,
+  saveSession,
+  type QuizSession,
+  unfinishedSession,
+  updateSession,
   useProgress,
   wrongIds,
 } from '@/lib/progress';
 import type { Bank, TopicId } from '@/lib/questions';
-import { useBank, useMessages } from '@/lib/use-messages';
+import { basePath } from '@/lib/shared';
+import { useBank, useLang, useMessages } from '@/lib/use-messages';
 
-type View =
-  | { kind: 'hub' }
-  | { kind: 'practice'; label: PracticeLabel; ids: string[]; index: number; key: number }
-  | { kind: 'exam'; ids: string[]; timeLimit: number; key: number }
-  | { kind: 'results'; outcome: ExamOutcome };
+/** Kokkuvõtte / eksami tulemuste samm URL-is. */
+const RESULTS = 'tulemus';
+type Step = number | typeof RESULTS;
+
+/** `/et/harjutustest/<id>/<samm>/` → `{ id, step }`; samm on 1-põhine küsimuse number või „tulemus”. */
+function parseQuizPath(pathname: string): { id?: string; step?: Step } {
+  const match = /\/harjutustest\/([^/]+)(?:\/([^/]+))?/.exec(pathname);
+  if (!match) return {};
+  const raw = match[2];
+  const n = Number(raw);
+  return { id: match[1], step: raw === RESULTS ? RESULTS : Number.isInteger(n) && n >= 1 ? n : undefined };
+}
+
+/** Õige samm sessiooni jaoks: vigane või puuduv samm asendatakse pooleli kohaga. */
+function resolveStep(session: QuizSession, step: Step | undefined): Step {
+  const total = session.ids.length;
+  if (session.kind === 'exam') {
+    if (session.outcome) return RESULTS;
+    return typeof step === 'number' && step <= total ? step : Math.min(session.page, total - 1) + 1;
+  }
+  if (step === RESULTS || (typeof step === 'number' && step <= total)) return step;
+  return session.index >= total ? RESULTS : session.index + 1;
+}
 
 function shuffle<T>(items: T[]): T[] {
   const a = [...items];
@@ -66,18 +92,12 @@ function Chip({ active, onClick, children }: { active: boolean; onClick: () => v
 
 export function QuizApp() {
   const params = useSearchParams();
+  const pathname = usePathname();
+  const lang = useLang();
   const progress = useProgress();
   const m = useMessages();
   const bank = useBank();
   const { questions, topics, getQuestion } = bank;
-  const [view, setView] = useState<View>(() => {
-    const q = params.get('q');
-    const question = q ? getQuestion(q) : undefined;
-    if (question) {
-      return { kind: 'practice', label: { kind: 'question', number: question.number }, ids: [question.id], index: 0, key: 0 };
-    }
-    return { kind: 'hub' };
-  });
 
   const [selectedTopics, setSelectedTopics] = useState<TopicId[]>([]);
   const [shuffled, setShuffled] = useState(false);
@@ -88,57 +108,119 @@ export function QuizApp() {
   const wrong = wrongIds(progress);
   const answered = Object.keys(progress.stats).length;
 
-  const toHub = useCallback(() => {
-    setView({ kind: 'hub' });
-    window.scrollTo({ top: 0 });
-  }, []);
+  // URL on vaate allikas: /harjutustest/ = avaleht, /harjutustest/<id>/<samm>/ = harjutus või eksam.
+  const { id, step } = parseQuizPath(pathname);
+  const session = id ? progress.sessions[id] : undefined;
+  const resolvedStep = session ? resolveStep(session, step) : undefined;
 
-  const startPractice = useCallback((label: PracticeLabel, ids: string[], index = 0) => {
-    setView({ kind: 'practice', label, ids, index, key: Date.now() });
-    window.scrollTo({ top: 0 });
-  }, []);
+  /** Muudab aadressi ilma lehte uuesti laadimata (Next.js sünkroniseerib `usePathname`-i). */
+  const go = useCallback(
+    (target?: { id: string; step: Step }, replace = false) => {
+      const url = basePath + withLang(lang, target ? `/harjutustest/${target.id}/${target.step}/` : '/harjutustest/');
+      if (url === window.location.pathname) return;
+      window.history[replace ? 'replaceState' : 'pushState'](null, '', url);
+      window.scrollTo({ top: 0 });
+    },
+    [lang],
+  );
+
+  // Tundmatu sessioon → avaleht; puuduv või vigane samm → pooleli koht.
+  useEffect(() => {
+    if (!id) return;
+    if (!session || resolvedStep === undefined) go(undefined, true);
+    else if (resolvedStep !== step) go({ id, step: resolvedStep }, true);
+  }, [id, step, session, resolvedStep, go]);
+
+  const toHub = useCallback(() => go(), [go]);
+
+  const startPractice = useCallback(
+    (label: PracticeLabel, ids: string[], replace = false) => {
+      const id = newSessionId();
+      saveSession({ kind: 'practice', id, at: Date.now(), label, ids, index: 0, results: {} });
+      go({ id, step: 1 }, replace);
+    },
+    [go],
+  );
+
+  // Otselink vastuste lehelt: ?q=<küsimuse id> → uus ühe küsimuse harjutus.
+  const handledQuery = useRef(false);
+  useEffect(() => {
+    if (handledQuery.current) return;
+    handledQuery.current = true;
+    const q = params.get('q');
+    const question = q ? getQuestion(q) : undefined;
+    if (question) startPractice({ kind: 'question', number: question.number }, [question.id], true);
+  }, [params, getQuestion, startPractice]);
 
   const startExam = useCallback(() => {
     const ids = shuffle(questions.map((q) => q.id)).slice(0, examSize);
-    setView({ kind: 'exam', ids, timeLimit: useTimer ? ids.length * 60 : 0, key: Date.now() });
-    window.scrollTo({ top: 0 });
-  }, [questions, examSize, useTimer]);
+    const id = newSessionId();
+    saveSession({
+      kind: 'exam',
+      id,
+      at: Date.now(),
+      ids,
+      timeLimit: useTimer ? ids.length * 60 : 0,
+      responses: {},
+      seconds: 0,
+      page: 0,
+    });
+    go({ id, step: 1 });
+  }, [questions, examSize, useTimer, go]);
 
-  const finishExam = useCallback((outcome: ExamOutcome) => {
-    const { graded, correct, total } = gradedScore(outcome, bank);
-    for (const g of graded) {
-      if (g.q.type !== 'essay' && g.result.status !== 'unanswered') recordAnswer(g.q.id, g.result.status === 'correct');
-    }
-    recordExam({ at: Date.now(), score: correct, total, seconds: outcome.seconds });
-    setView({ kind: 'results', outcome });
-    window.scrollTo({ top: 0 });
-  }, [bank]);
+  const finishExam = useCallback(
+    (outcome: ExamOutcome) => {
+      if (!id) return;
+      const { graded, correct, total } = gradedScore(outcome, bank);
+      for (const g of graded) {
+        if (g.q.type !== 'essay' && g.result.status !== 'unanswered') recordAnswer(g.q.id, g.result.status === 'correct');
+      }
+      recordExam({ at: Date.now(), score: correct, total, seconds: outcome.seconds });
+      updateSession<ExamSessionState>(id, (s) => ({ ...s, outcome }));
+      go({ id, step: RESULTS });
+    },
+    [bank, id, go],
+  );
 
   const retry = useCallback(
     (ids: string[]) => startPractice({ kind: 'retry' }, byNumber(bank, ids)),
     [startPractice, bank],
   );
 
-  if (view.kind === 'practice') {
+  const examPageChange = useCallback((page: number) => id && go({ id, step: page + 1 }), [id, go]);
+
+  if (session && resolvedStep !== undefined) {
+    const index = resolvedStep === RESULTS ? session.ids.length : resolvedStep - 1;
+    if (session.kind === 'practice') {
+      return (
+        <PracticeSession
+          key={session.id}
+          session={session}
+          index={index}
+          onNavigate={(i) => go({ id: session.id, step: i >= session.ids.length ? RESULTS : i + 1 })}
+          onExit={toHub}
+          onRetry={retry}
+        />
+      );
+    }
+    if (session.outcome) {
+      return <ExamResults outcome={session.outcome} onRetry={retry} onNewExam={startExam} onExit={toHub} />;
+    }
     return (
-      <PracticeSession
-        key={view.key}
-        label={view.label}
-        ids={view.ids}
-        startIndex={view.index}
+      <ExamSession
+        key={session.id}
+        session={session}
+        page={index}
+        onPageChange={examPageChange}
+        onFinish={finishExam}
         onExit={toHub}
-        onRetry={retry}
       />
     );
   }
-  if (view.kind === 'exam') {
-    return (
-      <ExamSession key={view.key} ids={view.ids} timeLimit={view.timeLimit} onFinish={finishExam} onExit={toHub} />
-    );
-  }
-  if (view.kind === 'results') {
-    return <ExamResults outcome={view.outcome} onRetry={retry} onNewExam={startExam} onExit={toHub} />;
-  }
+  // Sessiooni aadress, mida enam pole: efekt suunab avalehele.
+  if (id) return null;
+
+  const unfinished = unfinishedSession(progress);
 
   const practiceIds = questions
     .filter((q) => selectedTopics.length === 0 || selectedTopics.includes(q.topic))
@@ -152,27 +234,32 @@ export function QuizApp() {
         <p className="max-w-2xl text-muted-foreground">{m.hubIntro}</p>
       </header>
 
-      {progress.practice && (
+      {unfinished && (
         <Card className="border-primary/40 bg-primary/5">
           <CardContent className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <div className="font-medium">
-                {m.unfinishedPractice(formatPracticeLabel(progress.practice.label, bank, m))}
+                {unfinished.kind === 'practice'
+                  ? m.unfinishedPractice(formatPracticeLabel(unfinished.label, bank, m))
+                  : m.unfinishedExam}
               </div>
               <div className="text-sm text-muted-foreground">
-                {m.questionOf(progress.practice.index + 1, progress.practice.ids.length)}
+                {m.questionOf(
+                  (unfinished.kind === 'practice' ? unfinished.index : unfinished.page) + 1,
+                  unfinished.ids.length,
+                )}
               </div>
             </div>
             <div className="flex gap-2">
               <Button
                 onClick={() =>
-                  startPractice(progress.practice!.label, progress.practice!.ids, progress.practice!.index)
+                  go({ id: unfinished.id, step: resolveStep(unfinished, undefined) })
                 }
               >
                 <Play />
                 {m.resume}
               </Button>
-              <Button variant="ghost" onClick={() => savePractice(undefined)}>
+              <Button variant="ghost" onClick={() => deleteSession(unfinished.id)}>
                 {m.discard}
               </Button>
             </div>

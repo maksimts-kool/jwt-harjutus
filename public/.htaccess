@@ -1,2 +1,8 @@
 # Apache (Zone): tundmatu aadress näitab saidi enda 404 lehte.
 ErrorDocument 404 /personal/jwt-harj/404.html
+
+# Harjutuse ja eksami aadressid (/et/harjutustest/<id>/<samm>/) avavad harjutustesti lehe,
+# mis loeb sessiooni ja küsimuse numbri URL-ist.
+RewriteEngine On
+RewriteBase /personal/jwt-harj/
+RewriteRule ^(et|en|ru)/harjutustest/[a-z0-9]+(/[a-z0-9]+)?/?$ $1/harjutustest/index.html [L]

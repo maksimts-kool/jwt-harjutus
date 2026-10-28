@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { createSurvey, SurveyView } from '@/components/quiz/survey-view';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { type ExamOutcome, type ExamSessionState, updateSession } from '@/lib/progress';
 import { useBank, useMessages } from '@/lib/use-messages';
 import { toSurveyElements } from '@/lib/survey';
 import { cn } from '@/lib/utils';
@@ -15,29 +16,27 @@ function formatClock(seconds: number) {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-export interface ExamOutcome {
-  ids: string[];
-  responses: Record<string, unknown>;
-  seconds: number;
-  timedOut: boolean;
-}
+export type { ExamOutcome };
 
 export function ExamSession({
-  ids,
-  timeLimit,
+  session,
+  page,
+  onPageChange,
   onFinish,
   onExit,
 }: {
-  ids: string[];
-  /** sekundites, 0 = taimer puudub */
-  timeLimit: number;
+  session: ExamSessionState;
+  /** URL-ist: 0-põhine leht (küsimus) */
+  page: number;
+  onPageChange: (page: number) => void;
   onFinish: (outcome: ExamOutcome) => void;
   onExit: () => void;
 }) {
   const m = useMessages();
   const { getQuestion } = useBank();
-  const [model] = useState(() =>
-    createSurvey(
+  const { id, ids, timeLimit } = session;
+  const [model] = useState(() => {
+    const model = createSurvey(
       {
         pages: ids.map((id) => ({
           name: `p-${id}`,
@@ -54,9 +53,44 @@ export function ExamSession({
         ...(timeLimit > 0 ? { timeLimit, showTimer: false } : {}),
       },
       m,
-    ),
-  );
-  const [remaining, setRemaining] = useState(timeLimit);
+    );
+    // Jätkame pooleli eksamit (leht laaditi uuesti või avati link uuesti).
+    model.data = session.responses;
+    model.timeSpent = session.seconds;
+    model.currentPageNo = Math.min(page, ids.length - 1);
+    return model;
+  });
+  const [remaining, setRemaining] = useState(Math.max(0, timeLimit - session.seconds));
+
+  // URL → SurveyJS (brauseri edasi/tagasi nupud)
+  useEffect(() => {
+    const target = Math.min(Math.max(page, 0), ids.length - 1);
+    if (model.currentPageNo !== target) model.currentPageNo = target;
+  }, [model, page, ids.length]);
+
+  // SurveyJS → URL ja salvestus
+  useEffect(() => {
+    const save = () =>
+      updateSession<ExamSessionState>(id, (s) =>
+        s.outcome ? s : { ...s, responses: { ...model.data }, seconds: model.timeSpent, page: model.currentPageNo },
+      );
+    const pageChanged = () => {
+      save();
+      onPageChange(model.currentPageNo);
+    };
+    let ticks = 0;
+    const tick = () => {
+      if (++ticks % 5 === 0) save();
+    };
+    model.onValueChanged.add(save);
+    model.onCurrentPageChanged.add(pageChanged);
+    model.onTimerTick.add(tick);
+    return () => {
+      model.onValueChanged.remove(save);
+      model.onCurrentPageChanged.remove(pageChanged);
+      model.onTimerTick.remove(tick);
+    };
+  }, [model, id, onPageChange]);
 
   useEffect(() => {
     if (timeLimit <= 0) return;

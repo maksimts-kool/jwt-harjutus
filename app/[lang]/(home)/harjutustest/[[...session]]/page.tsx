@@ -3,7 +3,13 @@ import { QuizLoader } from '@/components/quiz/quiz-loader';
 import { toLang } from '@/lib/i18n';
 import { getMessages } from '@/lib/messages';
 
-export async function generateMetadata(props: PageProps<'/[lang]/harjutustest'>): Promise<Metadata> {
+// Staatilises ekspordis luuakse ainult /harjutustest/ leht. Sessiooni aadressid (/harjutustest/<id>/<samm>/)
+// loeb kliendikomponent URL-ist; serveris suunab need samale lehele public/.htaccess.
+export function generateStaticParams() {
+  return [{ session: [] }];
+}
+
+export async function generateMetadata(props: PageProps<'/[lang]/harjutustest/[[...session]]'>): Promise<Metadata> {
   const m = getMessages(toLang((await props.params).lang));
   return {
     title: m.practice,
