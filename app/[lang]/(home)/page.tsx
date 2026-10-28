@@ -6,7 +6,7 @@ import { buttonVariants } from '@/components/ui/button';
 import { toLang, withLang } from '@/lib/i18n';
 import { getMessages } from '@/lib/messages';
 import { getBank, type TopicId } from '@/lib/questions';
-import { docsRoute } from '@/lib/shared';
+import { basePath, docsRoute } from '@/lib/shared';
 
 const topicIcons: Record<TopicId, typeof Lightbulb> = {
   pohitoed: Lightbulb,
@@ -28,7 +28,7 @@ export default async function HomePage({ params }: PageProps<'/[lang]'>) {
       <section className="relative w-full animate-in fade-in duration-500">
         <div className="relative">
           <Image
-            src="/banner.webp"
+            src={`${basePath}/banner.webp`}
             alt="JWT: header, payload, signature"
             width={1982}
             height={792}

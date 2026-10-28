@@ -1,0 +1,2 @@
+# Apache (Zone): tundmatu aadress näitab saidi enda 404 lehte.
+ErrorDocument 404 /personal/jwt-harj/404.html

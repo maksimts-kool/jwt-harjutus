@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { DeadlineCountdown } from '@/components/deadline-countdown';
 import { type Lang, withLang } from './i18n';
 import { getMessages } from './messages';
-import { docsRoute } from './shared';
+import { basePath, docsRoute } from './shared';
 
 export function baseOptions(lang: Lang): BaseLayoutProps {
   const m = getMessages(lang);
@@ -13,7 +13,7 @@ export function baseOptions(lang: Lang): BaseLayoutProps {
       url: withLang(lang),
       title: (
         <span className="flex items-center gap-2 font-semibold">
-          <Image src="/logo.png" alt="" width={28} height={28} className="size-7" priority />
+          <Image src={`${basePath}/logo.png`} alt="" width={28} height={28} className="size-7" priority />
           {m.appName}
         </span>
       ),

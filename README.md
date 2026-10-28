@@ -9,12 +9,20 @@ JWT testiks valmistumise veebileht (Moodle'i test „TEST: JWT token”). Kasuta
 
 ```bash
 npm install
-npm run dev        # http://localhost:3000
+npm run dev        # http://localhost:3000/personal/jwt-harj/
 npm run build      # staatiline sait kausta out/
 npm run types:check
 ```
 
 `npm run build` loob täiesti staatilise saidi (`output: 'export'`). Kausta `out/` võib panna mis tahes staatilisse hostingusse (GitHub Pages, Netlify, Nginx). Serverit, andmebaasi ega sisselogimist pole.
+
+### Avaldamine (Zone)
+
+Sait elab aadressil https://maksimtsikvasvili24.thkit.ee/personal/jwt-harj/ (`basePath` failis `next.config.mjs`). PM2 rakendust pole vaja – Apache serveerib staatilisi faile otse:
+
+```bash
+npm run build && rsync -az --delete --chmod=D755,F644 out/ virt140715@maksimtsikvasvili24.thkit.ee:domeenid/www.maksimtsikvasvili24.thkit.ee/htdocs/personal/jwt-harj/
+```
 
 ## Struktuur
 
