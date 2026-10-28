@@ -1,0 +1,436 @@
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMDI0IiwibmFtZSI6Ik1hcmkgTWFhc2lrYXMiLCJyb2xlIjoic3R1ZGVudCIsImlhdCI6MTc2MTIwNjQwMCwiZXhwIjoxNzYxMjEwMDAwfQ.ZL6DsKKTa2hRmEkkMASGBI7hZW8ot5bJS2I8oOxVTwM",
+  "tokenSecret": "saladus123",
+  "topics": [
+    {
+      "id": "pohitoed",
+      "title": "JWT põhitõed",
+      "description": "Mis on JWT, millest see koosneb ja mida see ei kaitse."
+    },
+    {
+      "id": "token",
+      "title": "Tokeni sisu ja claimid",
+      "description": "Tokeni dekodeerimine, payloadi väljad ja standardväited."
+    },
+    {
+      "id": "allkiri",
+      "title": "Allkiri ja algoritmid",
+      "description": "HS256, RS256/ES256 ja miks muudetud token ei läbi kontrolli."
+    },
+    {
+      "id": "pyjwt",
+      "title": "PyJWT ja Python",
+      "description": "jwt.decode, erindid ja lubatud algoritmide nimekiri."
+    },
+    {
+      "id": "api",
+      "title": "Mini-API ja HTTP",
+      "description": "Authorization päis, vastuskoodid 200/401/403 ja salavõtme hoidmine."
+    },
+    {
+      "id": "turvalisus",
+      "title": "Turvalisus ja arhitektuur",
+      "description": "Head tavad, tokeni tühistamine ja JWT vs serveripoolne seanss."
+    }
+  ],
+  "questions": [
+    {
+      "id": "k25",
+      "number": 25,
+      "topic": "pohitoed",
+      "type": "single",
+      "prompt": "Mis on JWT (JSON Web Token)?",
+      "options": [
+        "Brauseri küpsise tüüp, mida saab kasutada ainult HTTPS-iga",
+        "Kompaktne, URL-iga sobiv märgend, millega edastatakse allkirjastatud infot JSON-kujul",
+        "Krüpteeritud fail, milles hoitakse kasutaja parooli",
+        "Andmebaasi tabel, kuhu server salvestab seansid"
+      ],
+      "answer": 1
+    },
+    {
+      "id": "k26",
+      "number": 26,
+      "topic": "pohitoed",
+      "type": "single",
+      "prompt": "Millistest osadest koosneb JWT ja millises järjekorras?",
+      "options": [
+        "payload . päis . allkiri",
+        "päis . payload . allkiri",
+        "kasutajanimi . parool . aegumisaeg",
+        "päis . allkiri . payload"
+      ],
+      "answer": 1
+    },
+    {
+      "id": "k11",
+      "number": 11,
+      "topic": "pohitoed",
+      "type": "truefalse",
+      "prompt": "JWT päis ja payload on krüpteeritud, seega ei saa keegi peale serveri nende sisu lugeda.",
+      "answer": false
+    },
+    {
+      "id": "k12",
+      "number": 12,
+      "topic": "pohitoed",
+      "type": "truefalse",
+      "prompt": "Payloadi võib panna kasutaja parooli, sest allkiri kaitseb seda.",
+      "answer": false
+    },
+    {
+      "id": "k2",
+      "number": 2,
+      "topic": "token",
+      "type": "text",
+      "useToken": true,
+      "prompt": "Kui kaua token kehtib? Vasta **minutites**.",
+      "answer": "60",
+      "accept": [
+        "60",
+        "60 min",
+        "60min",
+        "60 minutit",
+        "60 minutes"
+      ]
+    },
+    {
+      "id": "k3",
+      "number": 3,
+      "topic": "token",
+      "type": "text",
+      "useToken": true,
+      "prompt": "Millist algoritmi token kasutab? Kirjuta algoritmi nimi.",
+      "answer": "HS256",
+      "accept": [
+        "HS256"
+      ]
+    },
+    {
+      "id": "k4",
+      "number": 4,
+      "topic": "token",
+      "type": "text",
+      "useToken": true,
+      "prompt": "Mis on tokenis oleva kasutaja nimi (`name`)?",
+      "answer": "Mari Maasikas",
+      "accept": [
+        "Mari Maasikas"
+      ]
+    },
+    {
+      "id": "k5",
+      "number": 5,
+      "topic": "token",
+      "type": "text",
+      "useToken": true,
+      "prompt": "Mis on kasutaja roll (`role`)?",
+      "answer": "student",
+      "accept": [
+        "student"
+      ]
+    },
+    {
+      "id": "k31",
+      "number": 31,
+      "topic": "token",
+      "type": "text",
+      "useToken": true,
+      "prompt": "Mis on kasutaja ID (`sub`)?",
+      "answer": "1024",
+      "accept": [
+        "1024"
+      ]
+    },
+    {
+      "id": "k20",
+      "number": 20,
+      "topic": "token",
+      "type": "single",
+      "useToken": true,
+      "prompt": "Millal token väljastati (`iat`) Tallinna aja järgi?",
+      "options": [
+        "23.10.2025 kell 12:00",
+        "23.10.2026 kell 11:00",
+        "23.10.2025 kell 11:00",
+        "23.10.2025 kell 08:00"
+      ],
+      "answer": 2
+    },
+    {
+      "id": "k16",
+      "number": 16,
+      "topic": "token",
+      "type": "matching",
+      "prompt": "Seosta standardväide (*claim*) selle tähendusega.",
+      "pairs": [
+        {
+          "left": "exp",
+          "right": "aegumise aeg"
+        },
+        {
+          "left": "iat",
+          "right": "väljastamise aeg"
+        },
+        {
+          "left": "nbf",
+          "right": "kehtib alates"
+        },
+        {
+          "left": "sub",
+          "right": "subjekt, tavaliselt kasutaja ID"
+        },
+        {
+          "left": "iss",
+          "right": "väljaandja"
+        },
+        {
+          "left": "aud",
+          "right": "kellele token on mõeldud"
+        }
+      ],
+      "leftIsCode": true
+    },
+    {
+      "id": "k21",
+      "number": 21,
+      "topic": "token",
+      "type": "single",
+      "prompt": "Miks tuleb Pythonis enne `base64.urlsafe_b64decode` kutsumist JWT osale lisada `=` märke?",
+      "options": [
+        "Base64URL-ist JWT-s on täidismärgid `=` eemaldatud, dekodeerija aga vajab neid",
+        "Nii krüpteeritakse payload lahti",
+        "Ilma nendeta ei klapi allkiri",
+        "Need on JWT osade eraldajad"
+      ],
+      "answer": 0
+    },
+    {
+      "id": "k8",
+      "number": 8,
+      "topic": "allkiri",
+      "type": "truefalse",
+      "useToken": true,
+      "prompt": "Kui arvutada sama tokeni allkiri võtmega `saladus124` (õige on `saladus123`), tuleb tulemus samasugune nagu tokeni kolmas osa.",
+      "answer": false
+    },
+    {
+      "id": "k17",
+      "number": 17,
+      "topic": "allkiri",
+      "type": "single",
+      "prompt": "Õpilane muudab payloadis `\"role\":\"student\"` väärtuseks `\"role\":\"admin\"`, kodeerib payloadi uuesti ja paneb tokeni kokku **vana allkirjaga**. Mis juhtub, kui server tokenit kontrollib?",
+      "options": [
+        "Server krüpteerib payloadi uuesti ja annab admini õigused",
+        "Kontroll õnnestub, sest päis jäi samaks",
+        "Kontroll õnnestub, sest allkiri ei sõltu rollist",
+        "Kontroll ebaõnnestub, sest allkiri arvutatakse ka payloadi pealt"
+      ],
+      "answer": 3
+    },
+    {
+      "id": "k18",
+      "number": 18,
+      "topic": "allkiri",
+      "type": "single",
+      "prompt": "Mida peaks ründaja teadma, et muudetud payloadiga token läbiks HS256 allkirja kontrolli?",
+      "options": [
+        "Kasutaja parooli",
+        "Kasutaja ID-d",
+        "Ainult tokeni päist",
+        "Serveri salavõtit"
+      ],
+      "answer": 3
+    },
+    {
+      "id": "k19",
+      "number": 19,
+      "topic": "allkiri",
+      "type": "single",
+      "prompt": "Miks kasutatakse allkirjade võrdlemiseks `hmac.compare_digest`, mitte `==`?",
+      "options": [
+        "`==` ei tööta stringidega",
+        "See on kiirem",
+        "See võrdleb konstantse ajaga ja kaitseb ajastusrünnakute eest",
+        "`compare_digest` dekodeerib allkirja enne võrdlemist"
+      ],
+      "answer": 2
+    },
+    {
+      "id": "k27",
+      "number": 27,
+      "topic": "allkiri",
+      "type": "single",
+      "prompt": "Mis iseloomustab algoritmi **HS256**?",
+      "options": [
+        "Ei kasuta üldse võtit",
+        "Sümmeetriline: sama salavõti allkirjastab ja kontrollib",
+        "Krüpteerib payloadi, et seda ei saaks lugeda",
+        "Asümmeetriline: privaatvõti allkirjastab, avalik võti kontrollib"
+      ],
+      "answer": 1
+    },
+    {
+      "id": "k28",
+      "number": 28,
+      "topic": "allkiri",
+      "type": "single",
+      "prompt": "Millal on mõistlik eelistada **RS256 / ES256** algoritmi HS256-le?",
+      "options": [
+        "Kui tokenil ei ole aegumisaega",
+        "Kui payload peab olema salajane",
+        "Kui token peab olema lühem",
+        "Kui tokenit kontrollivad mitu teenust, kellele ei taha salavõtit anda"
+      ],
+      "answer": 3
+    },
+    {
+      "id": "k6",
+      "number": 6,
+      "topic": "pyjwt",
+      "type": "text",
+      "prompt": "Millise erindi tõstab PyJWT, kui token on aegunud? Kirjuta erindi nimi ilma mooduli eesliiteta (nt `InvalidTokenError`).",
+      "answer": "ExpiredSignatureError",
+      "accept": [
+        "ExpiredSignatureError"
+      ]
+    },
+    {
+      "id": "k10",
+      "number": 10,
+      "topic": "pyjwt",
+      "type": "truefalse",
+      "prompt": "PyJWT funktsioon `jwt.decode` kontrollib ise nii allkirja kui ka seda, kas token on aegunud (`exp`).",
+      "answer": true
+    },
+    {
+      "id": "k23",
+      "number": 23,
+      "topic": "pyjwt",
+      "type": "single",
+      "prompt": "Miks on `jwt.decode(token, SALAVOTI, algorithms=[\"HS256\"])` puhul oluline anda ette lubatud algoritmide nimekiri?",
+      "options": [
+        "See määrab tokeni kehtivusaja",
+        "Ilma selleta ei saa tokenit üldse luua",
+        "Nii ei saa ründaja muuta päises algoritmi, näiteks `alg: none`-ks",
+        "See krüpteerib payloadi"
+      ],
+      "answer": 2
+    },
+    {
+      "id": "k7",
+      "number": 7,
+      "topic": "api",
+      "type": "text",
+      "prompt": "Täida lünk. Klient saadab JWT serverile päises:\n\n`Authorization: ______ <token>`",
+      "answer": "Bearer",
+      "accept": [
+        "Bearer"
+      ]
+    },
+    {
+      "id": "k15",
+      "number": 15,
+      "topic": "api",
+      "type": "matching",
+      "prompt": "Mini-API-l on lõpp-punktid `POST /login`, `GET /profiil` ja `GET /admin`. Kasutaja `mari` roll on `student`, kasutaja `juhan` roll on `admin`. Seosta päring serveri vastuse koodiga.",
+      "choices": [
+        "200",
+        "401",
+        "403"
+      ],
+      "pairs": [
+        {
+          "left": "`/admin` kasutaja juhan kehtiva tokeniga",
+          "right": "200"
+        },
+        {
+          "left": "`/profiil` aegunud tokeniga",
+          "right": "401"
+        },
+        {
+          "left": "`/profiil` ilma tokenita",
+          "right": "401"
+        },
+        {
+          "left": "`/profiil` kehtiva tokeniga",
+          "right": "200"
+        },
+        {
+          "left": "`/admin` kasutaja mari kehtiva tokeniga",
+          "right": "403"
+        },
+        {
+          "left": "`/profiil` muudetud tokeniga",
+          "right": "401"
+        }
+      ],
+      "optionsNote": "Ekraanipildil on rippmenüü valikud peidus. Valikud 200 / 401 / 403 on taastatud mini-API reeglite põhjal (vt küsimus 22)."
+    },
+    {
+      "id": "k22",
+      "number": 22,
+      "topic": "api",
+      "type": "single",
+      "prompt": "Mis vahe on HTTP-koodidel 401 ja 403 mini-API-s?",
+      "options": [
+        "401 tähendab edukat sisselogimist",
+        "Mõlemad tähendavad serveri viga",
+        "401: token puudub või on vigane/aegunud; 403: token kehtib, aga rollil pole õigust",
+        "401: rollil pole õigust; 403: token puudub"
+      ],
+      "answer": 2
+    },
+    {
+      "id": "k24",
+      "number": 24,
+      "topic": "api",
+      "type": "single",
+      "prompt": "Kus peaks mini-API salavõtit hoidma?",
+      "options": [
+        "Keskkonnamuutujas, mitte koodis",
+        "Koodis konstandina, et seda oleks lihtne leida",
+        "Tokeni payloadis",
+        "README.md failis"
+      ],
+      "answer": 0
+    },
+    {
+      "id": "k29",
+      "number": 29,
+      "topic": "turvalisus",
+      "type": "multiple",
+      "prompt": "Millised on head turvanõuanded JWT kasutamisel? Vali kõik õiged.",
+      "options": [
+        "Edasta tokenit ainult HTTPS-i kaudu",
+        "Pane payloadi kasutaja parool, et serveril oleks seda mugavam kontrollida",
+        "Luba serveril aktsepteerida tokeni päises nimetatud mis tahes algoritmi",
+        "Määra alati `exp` ja hoia tokeni eluiga lühike",
+        "Luba serveris ainult kindlaid algoritme",
+        "Kasuta tugevat ja pikka salavõtit"
+      ],
+      "answer": [
+        0,
+        3,
+        4,
+        5
+      ]
+    },
+    {
+      "id": "k13",
+      "number": 13,
+      "topic": "turvalisus",
+      "type": "essay",
+      "prompt": "Selgita 3–5 lausega, miks JWT-d on raske enne aegumist tühistada, ja paku välja vähemalt üks lahendus.",
+      "modelAnswer": "JWT on olekuta (stateless): server ei salvesta väljastatud tokeneid, vaid kontrollib ainult allkirja ja aegumisaega. Seega kehtib korrektselt allkirjastatud token kuni `exp` hetkeni, isegi kui kasutaja logib välja või token varastatakse. Serveril pole kohta, kust tokenit „kustutada”. Lahenduseks võib teha access-tokeni eluea lühikeseks (nt 5–15 min) ja kasutada refresh-tokenit, mida saab serveris tühistada. Teine võimalus on pidada musta nimekirja (denylist) tühistatud tokenite `jti` väärtustest või vahetada salavõti, mis muudab kehtetuks kõik tokenid."
+    },
+    {
+      "id": "k14",
+      "number": 14,
+      "topic": "turvalisus",
+      "type": "essay",
+      "prompt": "Millal eelistaksid JWT asemel serveripoolset seanssi? Too vähemalt kaks argumenti.",
+      "modelAnswer": "Serveripoolne seanss on parem siis, kui on vaja kasutaja kohe välja logida või õigusi kohe muuta – seansi saab serverist kustutada, JWT kehtib aga kuni aegumiseni. Kui rakendus on üks tavaline veebileht ühes serveris, on seanss lihtsam ja turvalisem, sest küpsises on ainult juhuslik seansi ID ning andmed jäävad serverisse. Seansiga ei satu kasutaja andmed (roll, nimi) loetaval kujul kliendi kätte ja küpsis on lühike. JWT eelis – olekuta kontroll mitmes teenuses – pole sellisel juhul vajalik."
+    }
+  ]
+}

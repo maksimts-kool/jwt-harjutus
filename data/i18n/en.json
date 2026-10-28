@@ -1,0 +1,28 @@
+{
+  "topics": {
+    "pohitoed": {
+      "title": "JWT basics",
+      "description": "What a JWT is, what it consists of and what it does not protect."
+    },
+    "token": {
+      "title": "Token contents and claims",
+      "description": "Decoding a token, payload fields and registered claims."
+    },
+    "allkiri": {
+      "title": "Signature and algorithms",
+      "description": "HS256, RS256/ES256 and why a modified token fails verification."
+    },
+    "pyjwt": {
+      "title": "PyJWT and Python",
+      "description": "jwt.decode, exceptions and the list of allowed algorithms."
+    },
+    "api": {
+      "title": "Mini-API and HTTP",
+      "description": "The Authorization header, status codes 200/401/403 and storing the secret key."
+    },
+    "turvalisus": {
+      "title": "Security and architecture",
+      "description": "Best practices, revoking tokens and JWT vs server-side sessions."
+    }
+  }
+}
