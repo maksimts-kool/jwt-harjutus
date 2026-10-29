@@ -52,7 +52,6 @@ const et = {
 
   // näidistoken
   secretKey: 'salavõti',
-  useThisToken: 'Kasuta järgmist tokenit',
   copy: 'Kopeeri',
   copied: 'Kopeeritud',
   copyToken: 'Kopeeri token',
@@ -83,6 +82,8 @@ const et = {
   // vastuste otsing
   searchPlaceholder: 'Otsi küsimust, vastust või märksõna (nt exp, 401, Bearer)…',
   searchAria: 'Otsi küsimusi',
+  searchShort: 'Otsi (nt exp, 401, Bearer)…',
+  topicsToc: 'Teemad',
   allTopics: 'Kõik teemad',
   found: (n: number, total: number) => `Leitud ${n} / ${total} küsimust`,
   clearSearch: 'Tühjenda otsing',
@@ -208,7 +209,6 @@ const en: Messages = {
   practiceThis: 'Practice this question',
 
   secretKey: 'secret key',
-  useThisToken: 'Use the following token',
   copy: 'Copy',
   copied: 'Copied',
   copyToken: 'Copy token',
@@ -236,6 +236,8 @@ const en: Messages = {
 
   searchPlaceholder: 'Search for a question, answer or keyword (e.g. exp, 401, Bearer)…',
   searchAria: 'Search questions',
+  searchShort: 'Search (e.g. exp, 401, Bearer)…',
+  topicsToc: 'Topics',
   allTopics: 'All topics',
   found: (n, total) => `Found ${n} / ${total} questions`,
   clearSearch: 'Clear search',
@@ -354,7 +356,6 @@ const ru: Messages = {
   practiceThis: 'Потренировать этот вопрос',
 
   secretKey: 'секретный ключ',
-  useThisToken: 'Используйте следующий токен',
   copy: 'Копировать',
   copied: 'Скопировано',
   copyToken: 'Копировать токен',
@@ -382,6 +383,8 @@ const ru: Messages = {
 
   searchPlaceholder: 'Найти вопрос, ответ или ключевое слово (например exp, 401, Bearer)…',
   searchAria: 'Поиск по вопросам',
+  searchShort: 'Поиск (напр. exp, 401, Bearer)…',
+  topicsToc: 'Темы',
   allTopics: 'Все темы',
   found: (n, total) => `Найдено ${n} / ${total} ${ruPlural(total, 'вопроса', 'вопросов', 'вопросов')}`,
   clearSearch: 'Очистить поиск',

@@ -157,12 +157,6 @@ html > body[data-scroll-locked] {
   @apply rounded-md border border-border bg-muted px-1 py-0.5 font-mono text-[0.85em] text-foreground;
 }
 
-.token-box {
-  @apply mb-2 flex flex-col gap-2;
-}
-.token-box__label {
-  @apply text-sm text-muted-foreground;
-}
 .token-box__value {
   @apply block rounded-lg border border-border bg-muted/50 p-3 font-mono text-xs leading-relaxed break-all sm:text-[13px];
 }
@@ -192,6 +186,71 @@ html > body[data-scroll-locked] {
 .quiz-survey .sd-page__content {
   padding-top: 0;
 }
-.quiz-survey .sd-question__title .inline-code {
-  font-weight: 500;
+
+/* Vastusevariandid eraldi kaartidena (küsimuse tekst on QuestionHeader kaardil) */
+.quiz-survey fieldset.sd-selectbase {
+  @apply grid gap-3 sm:grid-cols-2;
+}
+.quiz-survey .sd-selectbase__item.sd-item {
+  @apply m-0 rounded-xl border border-border bg-background p-0 transition-colors;
+}
+.quiz-survey .sd-selectbase__label {
+  @apply flex h-full w-full items-center gap-3 px-4 py-4 sm:px-5 sm:py-5;
+}
+.quiz-survey .sd-item__control-label {
+  @apply text-base leading-snug font-medium sm:text-lg;
+}
+.quiz-survey .sd-selectbase__item.sd-item--allowhover:not(.sd-item--readonly):hover {
+  @apply border-primary/50 bg-primary/5;
+}
+.quiz-survey .sd-selectbase__item.sd-item--checked {
+  @apply border-primary bg-primary/10;
+}
+.quiz-survey .sd-selectbase__item:has(.sd-item__control:focus-visible) {
+  @apply ring-3 ring-ring/50;
+}
+.quiz-survey .sd-selectbase__item.sd-item--readonly:not(.sd-item--checked) {
+  @apply opacity-60;
+}
+.quiz-survey .sd-text,
+.quiz-survey .sd-comment,
+.quiz-survey .sd-text .sd-formbox__input,
+.quiz-survey .sd-dropdown__filter-string-input {
+  @apply text-base sm:text-lg;
+}
+
+/* Seostamine: iga rida eraldi kaardina, väide vasakul ja valik paremal */
+.quiz-survey .sd-question--table.sd-question--with-frame {
+  @apply bg-transparent p-0 shadow-none;
+}
+.quiz-survey .sd-table-wrapper {
+  @apply m-0 min-w-0 overflow-visible p-0;
+}
+.quiz-survey .sd-matrixdropdown,
+.quiz-survey .sd-matrixdropdown tbody {
+  @apply block w-full;
+}
+.quiz-survey .sd-matrixdropdown thead {
+  @apply hidden;
+}
+.quiz-survey .sd-matrixdropdown .sd-table__body {
+  @apply flex flex-col gap-3;
+}
+.quiz-survey .sd-matrixdropdown .sd-table__row {
+  @apply flex flex-col gap-2 rounded-xl border border-border bg-background px-4 py-3 sm:flex-row sm:items-center sm:gap-4 sm:px-5 sm:py-4;
+}
+.quiz-survey .sd-matrixdropdown .sd-table__row::after {
+  @apply hidden;
+}
+.quiz-survey .sd-matrixdropdown .sd-table__cell {
+  @apply block h-auto border-0 bg-none p-0;
+}
+.quiz-survey .sd-matrixdropdown .sd-table__cell--row-text {
+  @apply flex-1 text-base leading-snug font-medium sm:text-lg;
+}
+.quiz-survey .sd-matrixdropdown .sd-table__cell:not(.sd-table__cell--row-text) {
+  @apply w-full shrink-0 sm:w-72;
+}
+.quiz-survey .sd-matrixdropdown .sd-table__responsive-title {
+  @apply hidden;
 }

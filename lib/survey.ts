@@ -4,31 +4,19 @@ import {
   FALSE_LABEL,
   matchingChoices,
   matchingLeft,
+  plainText,
   type Question,
-  splitToken,
-  TOKEN_SECRET,
   TRUE_LABEL,
 } from './questions';
 
 type SurveyElement = Record<string, unknown>;
 
-export function tokenHtml(m: Messages): string {
-  const { header, payload, signature } = splitToken();
-  return `<div class="token-box">
-  <div class="token-box__label">${m.useThisToken} (HS256, ${m.secretKey} <code class="inline-code">${TOKEN_SECRET}</code>):</div>
-  <code class="token-box__value"><span class="tok-h">${header}</span>.<span class="tok-p">${payload}</span>.<span class="tok-s">${signature}</span></code>
-</div>`;
-}
-
-/** Ehitab küsimusest SurveyJS-i elemendid (vajadusel koos tokeni plokiga). */
+/** Ehitab küsimusest SurveyJS-i elemendid. Pealkiri ja token on eraldi kaardil (`QuestionHeader`), siin ainult vastuseväli. */
 export function toSurveyElements(q: Question, m: Messages, opts: { shuffle?: boolean } = {}): SurveyElement[] {
   const order = opts.shuffle ? 'random' : 'none';
   const elements: SurveyElement[] = [];
-  if (q.useToken) {
-    elements.push({ type: 'html', name: `${q.id}__token`, html: tokenHtml(m) });
-  }
-
-  const base = { name: q.id, title: q.prompt, titleLocation: 'top' };
+  // peidetud pealkiri jääb ekraanilugeja sildiks, seega ilma märgistuseta
+  const base = { name: q.id, title: plainText(q.prompt), titleLocation: 'hidden' };
 
   switch (q.type) {
     case 'single':

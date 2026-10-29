@@ -3,11 +3,12 @@
 import { ArrowRight, Check, LogOut, RotateCcw, SkipForward, Trophy } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { AnswerFeedback, StatusIcon } from '@/components/quiz/answer-feedback';
+import { QuestionHeader } from '@/components/quiz/question-header';
 import { createSurvey, SurveyView } from '@/components/quiz/survey-view';
 import { InlineText } from '@/components/inline-text';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { grade, type GradeResult, isEmptyResponse } from '@/lib/grading';
 import type { Messages } from '@/lib/messages';
@@ -15,6 +16,7 @@ import { type PracticeLabel, type PracticeSessionState, recordAnswer, updateSess
 import type { Bank, Question } from '@/lib/questions';
 import { toSurveyElements } from '@/lib/survey';
 import { useBank, useMessages } from '@/lib/use-messages';
+import { cn } from '@/lib/utils';
 
 export function formatPracticeLabel(label: PracticeLabel, bank: Bank, m: Messages): string {
   if (typeof label === 'string') return label;
@@ -38,10 +40,12 @@ function QuestionStep({
   q,
   checked,
   onCheck,
+  onSkip,
 }: {
   q: Question;
   checked: Checked | null;
   onCheck: (response: unknown) => void;
+  onSkip: () => void;
 }) {
   const m = useMessages();
   // Iga küsimus saab oma SurveyJS mudeli; `key` vanemas tagab uue mudeli.
@@ -79,10 +83,14 @@ function QuestionStep({
       </div>
       {hint && <p className="text-sm text-amber-600 dark:text-amber-400">{m.answerFirst}</p>}
       {!checked && (
-        <div className="flex flex-wrap gap-2">
-          <Button onClick={submit}>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button size="lg" className="px-4" onClick={submit}>
             <Check />
             {m.check}
+          </Button>
+          <Button variant="ghost" size="lg" className="ml-auto" onClick={onSkip}>
+            <SkipForward />
+            {m.skip}
           </Button>
         </div>
       )}
@@ -196,7 +204,27 @@ export function PracticeSession({
               {index + 1} / {ids.length}
             </span>
           </div>
-          <Progress value={(index / ids.length) * 100} />
+          {/* Edenemine ja tulemused ühel ribal: iga lõik on üks küsimus */}
+          <div className="flex gap-0.5 sm:gap-1">
+            {ids.map((id, i) => {
+              const r = results[id];
+              return (
+                <span
+                  key={id}
+                  className={cn(
+                    'h-1.5 min-w-0 flex-1 rounded-full transition-colors',
+                    i === index
+                      ? 'bg-primary'
+                      : r === true
+                        ? 'bg-emerald-500'
+                        : r === false
+                          ? 'bg-red-500'
+                          : 'bg-muted',
+                  )}
+                />
+              );
+            })}
+          </div>
         </div>
         <Button variant="ghost" size="sm" onClick={onExit} aria-label={m.abortPractice}>
           <LogOut />
@@ -204,70 +232,43 @@ export function PracticeSession({
         </Button>
       </div>
 
-      <div className="flex flex-wrap gap-1.5">
-        {ids.map((id, i) => {
-          const r = results[id];
-          return (
-            <span
-              key={id}
-              className={
-                'h-1.5 w-4 rounded-full transition-colors ' +
-                (i === index
-                  ? 'bg-primary'
-                  : r === true
-                    ? 'bg-emerald-500'
-                    : r === false
-                      ? 'bg-red-500'
-                      : 'bg-muted')
-              }
-            />
-          );
-        })}
-      </div>
-
-      <Card key={`${q.id}-${attempt}`} className="animate-in fade-in slide-in-from-right-4 duration-300">
-        <CardHeader className="flex flex-wrap items-center gap-1.5">
-          <Badge variant="secondary">{m.questionN(q.number)}</Badge>
-          <Badge variant="outline">{topic.title}</Badge>
-          <Badge variant="outline">{m.typeLabels[q.type]}</Badge>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-5">
-          <QuestionStep q={q} checked={checked} onCheck={handleCheck} />
-
-          {checked && (
+      <div key={`${q.id}-${attempt}`} className="flex flex-col gap-4 animate-in fade-in slide-in-from-right-4 duration-300">
+        <QuestionHeader
+          q={q}
+          badges={
             <>
-              <AnswerFeedback
-                q={q}
-                response={checked.response}
-                result={checked.result}
-                selfGrade={checked.selfGrade}
-                onSelfGrade={handleSelfGrade}
-              />
-              <div className="flex flex-wrap gap-2 border-t border-border pt-4">
-                <Button onClick={next}>
-                  {isLast ? m.seeSummary : m.nextQuestion}
-                  <ArrowRight />
-                </Button>
-                {canRetry && (
-                  <Button variant="outline" onClick={retry}>
-                    <RotateCcw />
-                    {m.tryAgain}
-                  </Button>
-                )}
-              </div>
+              <Badge variant="secondary">{m.questionN(q.number)}</Badge>
+              <Badge variant="outline">{topic.title}</Badge>
+              <Badge variant="outline">{m.typeLabels[q.type]}</Badge>
             </>
-          )}
-        </CardContent>
-      </Card>
+          }
+        />
+        <QuestionStep q={q} checked={checked} onCheck={handleCheck} onSkip={next} />
 
-      {!checked && (
-        <div className="flex justify-end">
-          <Button variant="ghost" size="sm" onClick={next}>
-            <SkipForward />
-            {m.skip}
-          </Button>
-        </div>
-      )}
+        {checked && (
+          <>
+            <AnswerFeedback
+              q={q}
+              response={checked.response}
+              result={checked.result}
+              selfGrade={checked.selfGrade}
+              onSelfGrade={handleSelfGrade}
+            />
+            <div className="flex flex-wrap gap-2">
+              <Button size="lg" className="px-4" onClick={next}>
+                {isLast ? m.seeSummary : m.nextQuestion}
+                <ArrowRight />
+              </Button>
+              {canRetry && (
+                <Button size="lg" className="px-4" variant="outline" onClick={retry}>
+                  <RotateCcw />
+                  {m.tryAgain}
+                </Button>
+              )}
+            </div>
+          </>
+        )}
+      </div>
 
       {Object.keys(results).length > 0 && (
         <p className="flex items-center gap-1.5 text-xs text-muted-foreground">

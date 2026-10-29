@@ -2,9 +2,11 @@
 
 import { LogOut, Timer } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { QuestionHeader } from '@/components/quiz/question-header';
 import { createSurvey, SurveyView } from '@/components/quiz/survey-view';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { isEmptyResponse } from '@/lib/grading';
 import { type ExamOutcome, type ExamSessionState, updateSession } from '@/lib/progress';
 import { useBank, useMessages } from '@/lib/use-messages';
 import { toSurveyElements } from '@/lib/survey';
@@ -42,9 +44,8 @@ export function ExamSession({
           name: `p-${id}`,
           elements: toSurveyElements(getQuestion(id)!, m, { shuffle: true }),
         })),
-        showProgressBar: true,
-        progressBarLocation: 'top',
-        progressBarType: 'pages',
+        // edenemise riba on SurveyJS-ist väljas, küsimuse kaardi kohal
+        showProgressBar: false,
         showPrevButton: true,
         completeText: m.finishExam,
         pageNextText: m.next,
@@ -61,6 +62,9 @@ export function ExamSession({
     return model;
   });
   const [remaining, setRemaining] = useState(Math.max(0, timeLimit - session.seconds));
+  const [data, setData] = useState<Record<string, unknown>>(() => ({ ...session.responses }));
+  const current = Math.min(Math.max(page, 0), ids.length - 1);
+  const q = getQuestion(ids[current])!;
 
   // URL → SurveyJS (brauseri edasi/tagasi nupud)
   useEffect(() => {
@@ -70,10 +74,12 @@ export function ExamSession({
 
   // SurveyJS → URL ja salvestus
   useEffect(() => {
-    const save = () =>
+    const save = () => {
+      setData({ ...model.data });
       updateSession<ExamSessionState>(id, (s) =>
         s.outcome ? s : { ...s, responses: { ...model.data }, seconds: model.timeSpent, page: model.currentPageNo },
       );
+    };
     const pageChanged = () => {
       save();
       onPageChange(model.currentPageNo);
@@ -151,11 +157,39 @@ export function ExamSession({
           {m.abort}
         </Button>
       </div>
-      <Card className="animate-in fade-in duration-300">
-        <CardContent>
-          <SurveyView model={model} />
-        </CardContent>
-      </Card>
+      {/* Edenemine ühel ribal: iga lõik on üks küsimus, klõpsuga saab sinna hüpata */}
+      <div className="flex items-center gap-3">
+        <div className="-my-1.5 flex min-w-0 flex-1 gap-0.5 sm:gap-1">
+          {ids.map((qid, i) => (
+            <button
+              key={qid}
+              type="button"
+              onClick={() => (model.currentPageNo = i)}
+              aria-label={`${i + 1} / ${ids.length}`}
+              aria-current={i === current ? 'step' : undefined}
+              className="group min-w-0 flex-1 py-1.5"
+            >
+              <span
+                className={cn(
+                  'block h-1.5 rounded-full transition-colors group-hover:bg-primary/70',
+                  i === current ? 'bg-primary' : isEmptyResponse(data[qid]) ? 'bg-muted' : 'bg-primary/40',
+                )}
+              />
+            </button>
+          ))}
+        </div>
+        <span className="shrink-0 text-sm text-muted-foreground tabular-nums">
+          {current + 1} / {ids.length}
+        </span>
+      </div>
+
+      <QuestionHeader
+        key={q.id}
+        q={q}
+        className="animate-in fade-in duration-300"
+        badges={<Badge variant="outline">{m.typeLabels[q.type]}</Badge>}
+      />
+      <SurveyView model={model} />
       <p className="text-xs text-muted-foreground">
         {m.examNote}
       </p>

@@ -15,8 +15,8 @@ export async function generateMetadata(props: PageProps<'/[lang]/vastused'>): Pr
 export default async function VastusedPage({ params }: PageProps<'/[lang]/vastused'>) {
   const m = getMessages(toLang((await params).lang));
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-8 sm:py-12">
-      <div className="flex flex-col gap-2">
+    <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:py-12">
+      <div className="flex max-w-3xl flex-col gap-2">
         <h1 className="text-3xl font-bold tracking-tight">{m.allAnswers}</h1>
         <p className="text-muted-foreground">{m.answersDescription}</p>
         <InlineText as="p" text={m.missingNote} className="text-sm text-muted-foreground" />
